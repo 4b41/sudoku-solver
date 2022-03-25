@@ -14,7 +14,9 @@ public class Main {
 	JFrame window = new JFrame();
 	JPanel gamePanel = new JPanel();
 	JPanel options = new JPanel();
+	JPanel menu = new JPanel();
 	JPanel[][] grid = new JPanel[3][3];
+	JLabel warning = new JLabel();
 	JButton solve = new JButton();
 	JButton reset = new JButton();
 	JTextField[][] inp = new JTextField[9][9];
@@ -41,14 +43,21 @@ public class Main {
 			public void actionPerformed(ActionEvent e){
 				String s = e.getActionCommand();
 				if (s.equals("solve")) {
-					solveBoard(0);
-					updateBoard();
+					if (checkSolvable()) {
+						solveBoard(0);
+						updateBoard();
+						warning.setVisible(false);
+					} else {
+						warning.setVisible(true);
+					}
 				} else if (s.equals("reset")) {
 					for (int i = 0; i < 9; i++) {
 						for (int j = 0; j < 9; j++) {
 							board[i][j] = ".";
 							inp[i][j].setText("");
+							inp[i][j].setForeground(Color.BLACK);
 							inp[i][j].setEditable(true);
+							warning.setVisible(false);
 						}
 					}
 				}
@@ -56,26 +65,30 @@ public class Main {
 		};
 		
 		window.setSize(480,580);
+		window.setTitle("Sudoku Solver");
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		window.getContentPane().setBackground(Color.white);
 		window.setLayout(null);
 		window.setResizable(false);
 		
-		options.setBounds(12, 12, 456, 60);
+		options.setBounds(12, 12, 456, 64);
 		options.setBackground(new Color(216, 216, 216));
 		options.setBorder(BorderFactory.createLineBorder(Color.black));
 		window.add(options);
 		
-		solve.setText("solve");
+		solve.setText("Solve");
 		solve.setActionCommand("solve");
 		solve.addActionListener(click);
 		options.add(solve);
 		
-		reset.setText("reset");
+		reset.setText("Reset");
 		reset.setActionCommand("reset");
 		reset.addActionListener(click);
 		options.add(reset);
 		
+		warning.setText("Error! This Sudoku is unsolvable! Please try again!");
+		warning.setVisible(false);
+		options.add(warning);
 		
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
@@ -93,6 +106,7 @@ public class Main {
 			for (int j = 0; j < 9; j++) {
 				int one = i, two = j;
 				inp[i][j] = new JTextField();;
+				inp[i][j].setBackground(new Color(246, 246, 242));
 				inp[i][j].setHorizontalAlignment(JTextField.CENTER);
 				inp[i][j].addKeyListener(new KeyAdapter() {
 				    public void keyTyped(KeyEvent e) { 
@@ -131,6 +145,32 @@ public class Main {
 		}
 	}
 	
+	public boolean checkSolvable() {
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				String cur = board[i][j];
+				if (cur.equals(".")) {
+					continue;
+				}
+				for (int k = 0; k < 9; k++) {
+					if(board[i][k].equals(cur) && k != j) {
+						return false;
+					}
+					if(board[k][j].equals(cur) && k != i) {
+						return false;
+					}
+					int r = (3*(i/3))+(j/3);
+					if (board[(3*(r/3))+(k/3)][(3*(r%3))+(k%3)].equals(cur)) {
+						if ((3*(r/3))+(k/3) != i && (3*(r%3))+(k%3) != j) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+	
 	public boolean solveBoard(int n) {
 		if (n == 81) {
 			return true;
@@ -141,6 +181,7 @@ public class Main {
 		} else {
 			for (int i = 1; i <= 9; i++) {
 				if (isValid(r, c, "" + i)) {
+					inp[r][c].setForeground(Color.RED);
 					board[r][c] = "" + i;
 					if (solveBoard(n+1)) {
 						return true;
